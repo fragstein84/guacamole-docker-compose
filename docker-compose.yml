@@ -83,6 +83,7 @@
 # 0.6                2023-03-23        switched to postgres 15.2-alpine
 # 0.61               2024-07-27        fix networks + version 3.0
 # 0.62               2024-07-27        fix
+# 1.00               2024-08-26        forked + TOTP + recording
 #####################################################################################
 
 #the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion
