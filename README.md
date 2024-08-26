@@ -1,5 +1,10 @@
 # Guacamole with docker compose
-This is a small documentation how to run a fully working **Apache Guacamole (incubating)** instance with docker (docker compose). The goal of this project is to make it easy to test Guacamole.
+This is a small documentation how to run a fully working **Apache Guacamole (incubating)** instance with docker (docker compose). The goal of this project is to make it easy to test Guacamole. You can use the TOTP authenticator to record sessions and then review these recordings.
+
+## Forked from :
+https://github.com/boschkundendienst/guacamole-docker-compose
+
+Thx at Boschkundendienst https://github.com/boschkundendienst
 
 ## About Guacamole
 Apache Guacamole (incubating) is a clientless remote desktop gateway. It supports standard protocols like VNC, RDP, and SSH. It is called clientless because no plugins or client software are required. Thanks to HTML5, once Guacamole is installed on a server, all you need to access your desktops is a web browser.
@@ -8,12 +13,13 @@ It supports RDP, SSH, Telnet and VNC and is the fastest HTML5 gateway I know. Ch
 
 ## Prerequisites
 You need a working **docker** installation and **docker compose** running on your machine.
+Compatible with docker-rootless
 
 ## Quick start
 Clone the GIT repository and start guacamole:
 
 ~~~bash
-git clone "https://github.com/boschkundendienst/guacamole-docker-compose.git"
+git clone "https://github.com/fragstein84/guacamole-docker-compose.git"
 cd guacamole-docker-compose
 ./prepare.sh
 docker compose up -d
@@ -38,7 +44,7 @@ networks:
 
 ### Services
 #### guacd
-The following part of docker-compose.yml will create the guacd service. guacd is the heart of Guacamole which dynamically loads support for remote desktop protocols (called "client plugins") and connects them to remote desktops based on instructions received from the web application. The container will be called `guacd_compose` based on the docker image `guacamole/guacd` connected to our previously created network `guacnetwork_compose`. Additionally we map the 2 local folders `./drive` and `./record` into the container. We can use them later to map user drives and store recordings of sessions.
+The following part of docker-compose.yml will create the guacd service. guacd is the heart of Guacamole which dynamically loads support for remote desktop protocols (called "client plugins") and connects them to remote desktops based on instructions received from the web application. The container will be called `guacd_compose` based on the docker image `guacamole/guacd` connected to our previously created network `guacnetwork_compose`. Additionally we map the 2 local folders `./drive` and `./recordings` into the container. We can use them later to map user drives and store recordings of sessions.
 
 ~~~python
 ...
@@ -48,11 +54,12 @@ services:
     container_name: guacd_compose
     image: guacamole/guacd
     networks:
-      guacnetwork_compose:
+      - guacnetwork_compose
     restart: always
+    user: "root:root" # needed for history recording
     volumes:
     - ./drive:/drive:rw
-    - ./record:/record:rw
+    - ./recordings:/record:rw
 ...
 ~~~
 
@@ -66,15 +73,15 @@ The following part of docker-compose.yml will create an instance of PostgreSQL u
     environment:
       PGDATA: /var/lib/postgresql/data/guacamole
       POSTGRES_DB: guacamole_db
-      POSTGRES_PASSWORD: ChooseYourOwnPasswordHere1234
       POSTGRES_USER: guacamole_user
-    image: postgres
+      POSTGRES_PASSWORD: 'ChooseYourOwnPasswordHere1234' # Do not use the 'dollars' like '$' symbol in your password. This creates a bug when running 'docker compose up -d'.
+    image: postgres:15.2-alpine
     networks:
-      guacnetwork_compose:
+      - guacnetwork_compose
     restart: always
     volumes:
-    - ./init:/docker-entrypoint-initdb.d:ro
-    - ./data:/var/lib/postgresql/data:rw
+      - ./init:/docker-entrypoint-initdb.d:z
+      - ./data:/var/lib/postgresql/data:z
 ...
 ~~~
 
@@ -89,19 +96,38 @@ The following part of docker-compose.yml will create an instance of guacamole by
     - guacd
     - postgres
     environment:
+      # basic setup
       GUACD_HOSTNAME: guacd
       POSTGRES_DATABASE: guacamole_db
       POSTGRES_HOSTNAME: postgres
-      POSTGRES_PASSWORD: ChooseYourOwnPasswordHere1234
       POSTGRES_USER: guacamole_user
+      POSTGRES_PASSWORD: 'ChooseYourOwnPasswordHere1234' # Do not use the 'dollars' like '$' symbol in your password. This creates a bug when running 'docker compose up -d'.
+      # TOTP setup
+## enable next line if you want to use TOTP Authentication (like Google Authenticator)
+##      TOTP_ENABLED: "true"      
+## enable the following line when TOTP is deactivated
+      TOTP_ENABLED: "false"
+      TOTP_ISSUER: "Guacamole" # You can substitue 'Guacamole' by your own TOTP title
+      TOTP_DIGITS: "6"
+      TOTP_PERIOD: "30"
+      TOTP_MODE: "sha256"
+      # History Recording setup
+      RECORDING_PATH: "/record"
+      RECORDING_SEARCH_PATH: '/record'
+      RECORDING_AUTO_CREATE_PATH: "true"
     image: guacamole/guacamole
-    links:
-    - guacd
     networks:
-      guacnetwork_compose:
+      - guacnetwork_compose
     ports:
-    - 8080/tcp
+## enable next line if not using nginx
+##    - 8080:8080/tcp # Guacamole is on :8080/guacamole, not /.
+## enable next line when using nginx
+      - 8080/tcp
     restart: always
+    user: "root:root" # needed for history recording
+    volumes:
+      - ./extensions:/etc/guacamole/extensions:ro
+      - ./recordings:/record:ro
 ...
 ~~~
 
@@ -112,19 +138,17 @@ The following part of docker-compose.yml will create an instance of nginx that m
 ...
   # nginx
   nginx:
-   container_name: nginx_guacamole_compose
-   restart: always
-   image: nginx
-   volumes:
-   - ./nginx/templates:/etc/nginx/templates:ro
-   - ./nginx/ssl/self.cert:/etc/nginx/ssl/self.cert:ro
-   - ./nginx/ssl/self-ssl.key:/etc/nginx/ssl/self-ssl.key:ro
-   ports:
-   - 8443:443
-   links:
-   - guacamole
-   networks:
-     guacnetwork_compose:
+    container_name: nginx_guacamole_compose
+    restart: always
+    image: nginx:latest
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/ssl/self.cert:/etc/nginx/ssl/self.cert:ro
+      - ./nginx/ssl/self-ssl.key:/etc/nginx/ssl/self-ssl.key:ro
+    ports:
+      - 8443:443
+    networks:
+      - guacnetwork_compose
 ...
 ~~~
 
