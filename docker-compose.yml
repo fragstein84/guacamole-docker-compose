@@ -114,8 +114,8 @@ services:
     environment:
       PGDATA: /var/lib/postgresql/data/guacamole
       POSTGRES_DB: guacamole_db
-      POSTGRES_PASSWORD: 'ChooseYourOwnPasswordHere1234'
       POSTGRES_USER: guacamole_user
+      POSTGRES_PASSWORD: 'ChooseYourOwnPasswordHere1234' # Do not use the 'dollars' like '$' symbol in your password. This creates a bug when running 'docker compose up -d'.
     image: postgres:15.2-alpine
     networks:
       - guacnetwork_compose
@@ -135,8 +135,8 @@ services:
       GUACD_HOSTNAME: guacd
       POSTGRES_DATABASE: guacamole_db
       POSTGRES_HOSTNAME: postgres
-      POSTGRES_PASSWORD: 'ChooseYourOwnPasswordHere1234'
       POSTGRES_USER: guacamole_user
+      POSTGRES_PASSWORD: 'ChooseYourOwnPasswordHere1234' # Do not use the 'dollars' like '$' symbol in your password. This creates a bug when running 'docker compose up -d'.
       # TOTP setup
 ## enable next line if you want to use TOTP Authentication (like Google Authenticator)
 ##      TOTP_ENABLED: "true"      
