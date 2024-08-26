@@ -75,7 +75,7 @@ The following part of docker-compose.yml will create an instance of PostgreSQL u
       POSTGRES_DB: guacamole_db
       POSTGRES_USER: guacamole_user
       POSTGRES_PASSWORD: 'ChooseYourOwnPasswordHere1234' # Do not use the 'dollars' like '$' symbol in your password. This creates a bug when running 'docker compose up -d'.
-    image: postgres:15.2-alpine
+    image: postgres:latest
     networks:
       - guacnetwork_compose
     restart: always
