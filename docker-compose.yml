@@ -144,9 +144,9 @@ services:
 ## enable the following line when TOTP is deactivated
       TOTP_ENABLED: "false"
       TOTP_ISSUER: "Guacamole" # You can substitue 'Guacamole' by your own TOTP title
-      TOTP_DIGITS: "6"
+      TOTP_DIGITS: "16"
       TOTP_PERIOD: "30"
-      TOTP_MODE: "sha256"
+      TOTP_MODE: "sha1"
       # History Recording setup
       RECORDING_PATH: "/record"
       RECORDING_SEARCH_PATH: '/record'
