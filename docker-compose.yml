@@ -84,6 +84,7 @@
 # 0.61               2024-07-27        fix networks + version 3.0
 # 0.62               2024-07-27        fix
 # 1.00               2024-08-26        forked + TOTP + recording
+# 1.01               2025-02-03        change TOTP_MODE and TOTP_DIGITS for Microsoft Authenticator
 #####################################################################################
 
 #the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion
