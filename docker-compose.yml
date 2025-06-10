@@ -113,12 +113,12 @@ services:
   # postgres
   postgres:
     container_name: postgres_guacamole_compose
+    image: postgres:latest
     environment:
       PGDATA: /var/lib/postgresql/data/guacamole
       POSTGRES_DB: guacamole_db
       POSTGRES_USER: guacamole_user
       POSTGRES_PASSWORD: 'ChooseYourOwnPasswordHere1234' # Do not use the 'dollars' like '$' symbol in your password. This creates a bug when running 'docker compose up -d'.
-    image: postgres:latest
     networks:
       - guacnetwork_compose
     restart: always
@@ -129,6 +129,7 @@ services:
   # guacamole
   guacamole:
     container_name: guacamole_compose
+    image: guacamole/guacamole
     depends_on:
     - guacd
     - postgres
@@ -141,18 +142,17 @@ services:
       POSTGRES_PASSWORD: 'ChooseYourOwnPasswordHere1234' # Do not use the 'dollars' like '$' symbol in your password. This creates a bug when running 'docker compose up -d'.
       # TOTP setup
 ## enable next line if you want to use TOTP Authentication (like Google Authenticator)
-##      TOTP_ENABLED: "true"      
+##      TOTP_ENABLED: "true"
 ## enable the following line when TOTP is deactivated
       TOTP_ENABLED: "false"
       TOTP_ISSUER: "Guacamole" # You can substitue 'Guacamole' by your own TOTP title
-      TOTP_DIGITS: "16"
+      TOTP_DIGITS: "6"
       TOTP_PERIOD: "30"
       TOTP_MODE: "sha1"
       # History Recording setup
       RECORDING_PATH: "/record"
       RECORDING_SEARCH_PATH: '/record'
       RECORDING_AUTO_CREATE_PATH: "true"
-    image: guacamole/guacamole
     networks:
       - guacnetwork_compose
     ports:
@@ -170,8 +170,8 @@ services:
   # nginx
   nginx:
     container_name: nginx_guacamole_compose
-    restart: always
     image: nginx:latest
+    restart: always
     volumes:
       - ./nginx/templates:/etc/nginx/templates:ro
       - ./nginx/ssl/self.cert:/etc/nginx/ssl/self.cert:ro
